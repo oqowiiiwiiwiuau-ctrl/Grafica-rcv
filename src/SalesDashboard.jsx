@@ -3,10 +3,20 @@ import * as XLSX from 'xlsx';
 import Plotly from 'react-plotly.js';
 import './SalesDashboard.css';
 
+// Mapeo de meses y días a español para las gráficas
+const spanishMonths = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+const spanishDays = [
+    'Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'
+];
+
 const SalesDashboard = () => {
     const [data, setData] = useState(null);
     const [summary, setSummary] = useState(null);
-    const [duplicatedData, setDuplicatedData] = useState(null);
+    const [duplicatedInvoices, setDuplicatedInvoices] = useState(null);
     const [file, setFile] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
@@ -19,7 +29,7 @@ const SalesDashboard = () => {
         setFile(selectedFile);
         setData(null);
         setSummary(null);
-        setDuplicatedData(null);
+        setDuplicatedInvoices(null);
         setErrorMessage('');
         setSuccessMessage('');
     };
@@ -82,11 +92,15 @@ const SalesDashboard = () => {
                     };
                 });
 
-                const duplicates = processedData.filter((row, index, self) =>
-                    self.findIndex(t => t['Nº DE LA FACTURA'] === row['Nº DE LA FACTURA']) !== index
-                );
-                setDuplicatedData(duplicates.length > 0 ? duplicates : null);
+                const invoiceCounts = processedData.reduce((acc, row) => {
+                    const invoiceNumber = row['Nº DE LA FACTURA'];
+                    acc[invoiceNumber] = (acc[invoiceNumber] || 0) + 1;
+                    return acc;
+                }, {});
 
+                const duplicates = processedData.filter(row => invoiceCounts[row['Nº DE LA FACTURA']] > 1);
+                setDuplicatedInvoices(duplicates.length > 0 ? duplicates : null);
+                
                 const sales = processedData.map(d => d['IMPORTE TOTAL']).filter(v => !isNaN(v));
                 
                 if (sales.length === 0) {
@@ -156,30 +170,39 @@ const SalesDashboard = () => {
             type: 'scatter',
             mode: 'lines+markers',
             marker: { color: 'rgb(75, 192, 192)' },
+            name: 'Ventas Diarias',
         }];
         const layout = {
-            title: 'Ventas por Día (Gráfica de Línea)',
+            title: 'Ventas por Día',
             xaxis: { title: 'Fecha' },
             yaxis: { title: 'Importe Total' },
             responsive: true,
+            plot_bgcolor: '#f9f9f9',
+            paper_bgcolor: '#ffffff',
         };
         return <Plotly data={plotData} layout={layout} style={{ width: '100%' }} />;
     };
 
+    // Nueva función para el gráfico de regresión lineal
     const renderRegressionGraph = () => {
-        if (!data || data.length === 0) return null;
+        if (!data || data.length < 2) return <p>Se requieren al menos dos datos para el análisis de regresión lineal.</p>;
+    
         const aggregatedData = aggregateSalesByDate(data.filter(d => d['FECHA'] && d['IMPORTE TOTAL'] && !isNaN(d['IMPORTE TOTAL'])));
         
         if (aggregatedData.length === 0) {
-            return <p>No hay datos de fecha o ventas válidos para mostrar en la gráfica de regresión.</p>;
+            return <p>No hay datos suficientes para la regresión.</p>;
         }
         
         const dates = aggregatedData.map(d => d.date);
         const sales = aggregatedData.map(d => d.sales);
-
+    
         const x_values = dates.map(d => new Date(d).getTime());
         
         const n = x_values.length;
+        if (n < 2) {
+            return <p>Se requieren al menos dos puntos de datos para la regresión.</p>;
+        }
+        
         const sum_x = x_values.reduce((a, b) => a + b, 0);
         const sum_y = sales.reduce((a, b) => a + b, 0);
         const sum_xy = x_values.map((x, i) => x * sales[i]).reduce((a, b) => a + b, 0);
@@ -189,7 +212,7 @@ const SalesDashboard = () => {
         const intercept = (sum_y - slope * sum_x) / n;
         
         const regression_line = x_values.map(x => slope * x + intercept);
-
+    
         const plotData = [
             {
                 x: dates,
@@ -205,7 +228,7 @@ const SalesDashboard = () => {
                 mode: 'lines',
                 type: 'scatter',
                 name: 'Línea de Regresión',
-                marker: { color: 'red' },
+                line: { color: 'red', width: 2 },
             }
         ];
         const layout = {
@@ -213,64 +236,94 @@ const SalesDashboard = () => {
             xaxis: { title: 'Fecha' },
             yaxis: { title: 'Importe Total' },
             responsive: true,
+            plot_bgcolor: '#f9f9f9',
+            paper_bgcolor: '#ffffff',
+        };
+        return <Plotly data={plotData} layout={layout} style={{ width: '100%' }} />;
+    };
+    
+
+    const renderBarGraph = () => {
+        if (!data || data.length === 0) return null;
+        const salesByMonth = {};
+        data.forEach(item => {
+            if (item['FECHA'] && typeof item['IMPORTE TOTAL'] === 'number') {
+                const date = item['FECHA'];
+                const yearMonth = `${date.getFullYear()}-${date.getMonth()}`;
+                if (salesByMonth[yearMonth]) {
+                    salesByMonth[yearMonth] += item['IMPORTE TOTAL'];
+                } else {
+                    salesByMonth[yearMonth] = item['IMPORTE TOTAL'];
+                }
+            }
+        });
+
+        const sortedMonths = Object.keys(salesByMonth).sort((a, b) => {
+            const [yearA, monthA] = a.split('-').map(Number);
+            const [yearB, monthB] = b.split('-').map(Number);
+            return new Date(yearA, monthA) - new Date(yearB, monthB);
+        });
+
+        const xData = sortedMonths.map(key => {
+            const [year, month] = key.split('-').map(Number);
+            return `${spanishMonths[month]} ${year}`;
+        });
+        const yData = sortedMonths.map(key => salesByMonth[key]);
+
+        const plotData = [{
+            x: xData,
+            y: yData,
+            type: 'bar',
+            marker: { color: 'rgb(128, 0, 128)' },
+            name: 'Ventas Mensuales',
+        }];
+        const layout = {
+            title: 'Ventas por Mes',
+            xaxis: { title: 'Mes' },
+            yaxis: { title: 'Importe Total' },
+            responsive: true,
+            plot_bgcolor: '#f9f9f9',
+            paper_bgcolor: '#ffffff',
         };
         return <Plotly data={plotData} layout={layout} style={{ width: '100%' }} />;
     };
 
-    const renderMultipleRegressionGraph = () => {
-        if (!data || data.length < 2) return <p>Se requieren al menos dos datos para el análisis de regresión múltiple.</p>;
-
-        const aggregatedData = aggregateSalesByDate(data.filter(d => d['FECHA'] && d['IMPORTE TOTAL'] && !isNaN(d['IMPORTE TOTAL'])));
-        
-        if (aggregatedData.length === 0) {
-            return <p>No hay datos suficientes para la regresión múltiple.</p>;
-        }
-        
-        const dates = aggregatedData.map(d => d.date);
-        const sales = aggregatedData.map(d => d.sales);
-        
-        const x_values = dates.map(d => new Date(d).getTime());
-
-        const n = x_values.length;
-        if (n < 2) {
-            return <p>Se requieren al menos dos puntos de datos para la regresión.</p>;
-        }
-        
-        const x_mean = x_values.reduce((a, b) => a + b, 0) / n;
-        const y_mean = sales.reduce((a, b) => a + b, 0) / n;
-
-        const ss_xx = x_values.map(x => Math.pow(x - x_mean, 2)).reduce((a, b) => a + b);
-        const ss_xy = x_values.map((x, i) => (x - x_mean) * (sales[i] - y_mean)).reduce((a, b) => a + b);
-
-        const beta1 = ss_xy / ss_xx;
-        const beta0 = y_mean - beta1 * x_mean;
-
-        const predicted_y = x_values.map(x => beta0 + beta1 * x);
-
-        const plotData = [
-            {
-                x: dates,
-                y: sales,
-                mode: 'markers',
-                type: 'scatter',
-                name: 'Ventas Reales',
-                marker: { color: 'rgba(75, 192, 192, 0.6)' },
-            },
-            {
-                x: dates,
-                y: predicted_y,
-                mode: 'lines',
-                type: 'scatter',
-                name: 'Predicción del Modelo',
-                marker: { color: 'orange' },
+    const renderPieChart = () => {
+        if (!data || data.length === 0) return null;
+        const salesByDayOfWeek = {};
+        data.forEach(item => {
+            if (item['FECHA'] && typeof item['IMPORTE TOTAL'] === 'number') {
+                const day = item['FECHA'].getDay();
+                const dayName = spanishDays[day];
+                if (salesByDayOfWeek[dayName]) {
+                    salesByDayOfWeek[dayName] += item['IMPORTE TOTAL'];
+                } else {
+                    salesByDayOfWeek[dayName] = item['IMPORTE TOTAL'];
+                }
             }
-        ];
+        });
+
+        const labels = Object.keys(salesByDayOfWeek);
+        const values = Object.values(salesByDayOfWeek);
+
+        const plotData = [{
+            labels: labels,
+            values: values,
+            type: 'pie',
+            hole: 0.4,
+            marker: {
+                colors: [
+                    '#4C78A8', '#F58518', '#E45756', '#72B7B2', '#54A24B', '#EECA3B', '#B279A2'
+                ]
+            },
+            hoverinfo: 'label+percent+value',
+        }];
+
         const layout = {
-            title: 'Predicción de Ventas con Regresión Múltiple',
-            xaxis: { title: 'Fecha' },
-            yaxis: { title: 'Importe Total' },
+            title: 'Distribución de Ventas por Día de la Semana',
             responsive: true,
         };
+
         return <Plotly data={plotData} layout={layout} style={{ width: '100%' }} />;
     };
 
@@ -279,6 +332,15 @@ const SalesDashboard = () => {
             <header className="header">
                 <h1>Dashboard de Análisis de Ventas</h1>
                 <p className="subtitle">Herramienta para la visualización y análisis de datos de ventas en archivos Excel.</p>
+                <div className="authors-list">
+                    <h2>Fuentes y Referencias</h2>
+                    <ul>
+                        <li><a href="https://eloquentjavascript.net/" target="_blank" rel="noopener noreferrer">**JavaScript Eloquente**</a> por Marijn Haverbeke</li>
+                        <li><a href="https://carlosazaustre.es/" target="_blank" rel="noopener noreferrer">**Aprender React**</a> por Carlos Azaustre</li>
+                        <li><a href="https://kalob.io/" target="_blank" rel="noopener noreferrer">**JavaScript Professional**</a> por Kalob Taulien</li>
+                        <li><a href="https://www.oreilly.com/library/view/react-up/9781492067885/" target="_blank" rel="noopener noreferrer">**React: Up & Running, 2ª Edición**</a> por Stoyan Stefanov</li>
+                    </ul>
+                </div>
             </header>
             <main className="container">
                 {errorMessage && <div className="alert-message">{errorMessage}</div>}
@@ -340,15 +402,16 @@ const SalesDashboard = () => {
                                         </table>
                                     )}
                                 </div>
-                                <h2 className="card-title">Facturas Duplicadas</h2>
-                                {duplicatedData && duplicatedData.length > 0 ? (
+                                <h2 className="card-title mt-30">Facturas Duplicadas</h2>
+                                {duplicatedInvoices && duplicatedInvoices.length > 0 ? (
                                     <div className="table-container">
+                                        <p className="card-description-small">Se detectaron **{duplicatedInvoices.length}** facturas duplicadas. Se muestran a continuación.</p>
                                         <table>
                                             <thead>
-                                                <tr>{duplicatedData.length > 0 && Object.keys(duplicatedData[0]).map((key, i) => <th key={i}>{key}</th>)}</tr>
+                                                <tr>{duplicatedInvoices.length > 0 && Object.keys(duplicatedInvoices[0]).map((key, i) => <th key={i}>{key}</th>)}</tr>
                                             </thead>
                                             <tbody>
-                                                {duplicatedData.map((row, i) => (
+                                                {duplicatedInvoices.map((row, i) => (
                                                     <tr key={i}>{Object.values(row).map((val, j) => <td key={j}>{val instanceof Date ? val.toLocaleDateString() : val}</td>)}</tr>
                                                 ))}
                                             </tbody>
@@ -360,28 +423,34 @@ const SalesDashboard = () => {
                             </section>
                         </div>
                         <section className="card graph-card">
-                            <h2 className="card-title">Análisis de Ventas a lo largo del Tiempo</h2>
+                            <h2 className="card-title">Análisis Gráfico de Ventas</h2>
                             <p className="card-description">Explore las tendencias de ventas con estas visualizaciones interactivas.</p>
                             <div className="graph-container">
-                                <h3 className="graph-title">Ventas por Día (Gráfica de Línea)</h3>
+                                <h3 className="graph-title">Ventas por Día</h3>
                                 <p className="graph-description">Muestra el comportamiento de las ventas totales día a día, ideal para identificar picos o caídas en la actividad comercial.</p>
                                 <div className="graph">{renderLineGraph()}</div>
+                            </div>
+                            <div className="graph-container">
+                                <h3 className="graph-title">Ventas por Mes</h3>
+                                <p className="graph-description">Agrega las ventas totales de cada mes para visualizar la estacionalidad y las tendencias a largo plazo.</p>
+                                <div className="graph">{renderBarGraph()}</div>
+                            </div>
+                            <div className="graph-container">
+                                <h3 className="graph-title">Distribución de Ventas por Día de la Semana</h3>
+                                <p className="graph-description">Identifique los días de la semana con mayor o menor actividad de ventas para optimizar recursos y campañas.</p>
+                                <div className="graph">{renderPieChart()}</div>
                             </div>
                             <div className="graph-container">
                                 <h3 className="graph-title">Regresión Lineal de Ventas</h3>
                                 <p className="graph-description">Visualiza la tendencia general de las ventas. La línea de regresión muestra la dirección del crecimiento o decrecimiento a lo largo del tiempo.</p>
                                 <div className="graph">{renderRegressionGraph()}</div>
                             </div>
-                            <div className="graph-container">
-                                <h3 className="graph-title">Predicción con Regresión Múltiple</h3>
-                                <p className="graph-description">Compara las ventas reales con una predicción de modelo, ayudando a evaluar la precisión de los pronósticos y detectar desviaciones significativas.</p>
-                                <div className="graph">{renderMultipleRegressionGraph()}</div>
-                            </div>
                         </section>
                     </>
                 )}
             </main>
             <footer className="footer">
+                <p>Desarrollado por Carlos Dev</p>
                 <p>&copy; 2025 - Dashboard de Análisis de Ventas Desarrollado con React.</p>
             </footer>
         </div>
