@@ -169,7 +169,8 @@ const SalesDashboard = () => {
             y: sales,
             type: 'scatter',
             mode: 'lines+markers',
-            marker: { color: 'rgb(75, 192, 192)' },
+            marker: { color: 'var(--accent-color)' },
+            line: { color: 'var(--accent-color)', width: 3 },
             name: 'Ventas Diarias',
         }];
         const layout = {
@@ -177,13 +178,13 @@ const SalesDashboard = () => {
             xaxis: { title: 'Fecha' },
             yaxis: { title: 'Importe Total' },
             responsive: true,
-            plot_bgcolor: '#f9f9f9',
-            paper_bgcolor: '#ffffff',
+            plot_bgcolor: 'var(--card-background)',
+            paper_bgcolor: 'var(--card-background)',
+            font: { color: 'var(--text-color)' }
         };
         return <Plotly data={plotData} layout={layout} style={{ width: '100%' }} />;
     };
 
-    // Nueva función para el gráfico de regresión lineal
     const renderRegressionGraph = () => {
         if (!data || data.length < 2) return <p>Se requieren al menos dos datos para el análisis de regresión lineal.</p>;
     
@@ -220,7 +221,7 @@ const SalesDashboard = () => {
                 mode: 'markers',
                 type: 'scatter',
                 name: 'Datos Reales',
-                marker: { color: 'rgba(75, 192, 192, 0.6)' },
+                marker: { color: 'var(--accent-color)', size: 8 },
             },
             {
                 x: dates,
@@ -228,7 +229,7 @@ const SalesDashboard = () => {
                 mode: 'lines',
                 type: 'scatter',
                 name: 'Línea de Regresión',
-                line: { color: 'red', width: 2 },
+                line: { color: 'var(--secondary-color)', width: 3 },
             }
         ];
         const layout = {
@@ -236,8 +237,9 @@ const SalesDashboard = () => {
             xaxis: { title: 'Fecha' },
             yaxis: { title: 'Importe Total' },
             responsive: true,
-            plot_bgcolor: '#f9f9f9',
-            paper_bgcolor: '#ffffff',
+            plot_bgcolor: 'var(--card-background)',
+            paper_bgcolor: 'var(--card-background)',
+            font: { color: 'var(--text-color)' }
         };
         return <Plotly data={plotData} layout={layout} style={{ width: '100%' }} />;
     };
@@ -274,7 +276,7 @@ const SalesDashboard = () => {
             x: xData,
             y: yData,
             type: 'bar',
-            marker: { color: 'rgb(128, 0, 128)' },
+            marker: { color: 'var(--accent-color)' },
             name: 'Ventas Mensuales',
         }];
         const layout = {
@@ -282,8 +284,9 @@ const SalesDashboard = () => {
             xaxis: { title: 'Mes' },
             yaxis: { title: 'Importe Total' },
             responsive: true,
-            plot_bgcolor: '#f9f9f9',
-            paper_bgcolor: '#ffffff',
+            plot_bgcolor: 'var(--card-background)',
+            paper_bgcolor: 'var(--card-background)',
+            font: { color: 'var(--text-color)' }
         };
         return <Plotly data={plotData} layout={layout} style={{ width: '100%' }} />;
     };
@@ -313,7 +316,13 @@ const SalesDashboard = () => {
             hole: 0.4,
             marker: {
                 colors: [
-                    '#4C78A8', '#F58518', '#E45756', '#72B7B2', '#54A24B', '#EECA3B', '#B279A2'
+                    'var(--accent-color)', 
+                    'var(--secondary-color)', 
+                    '#4A6FA5', 
+                    '#166088', 
+                    '#4C5B5C', 
+                    '#F39C12', 
+                    '#E74C3C'
                 ]
             },
             hoverinfo: 'label+percent+value',
@@ -322,6 +331,9 @@ const SalesDashboard = () => {
         const layout = {
             title: 'Distribución de Ventas por Día de la Semana',
             responsive: true,
+            plot_bgcolor: 'var(--card-background)',
+            paper_bgcolor: 'var(--card-background)',
+            font: { color: 'var(--text-color)' }
         };
 
         return <Plotly data={plotData} layout={layout} style={{ width: '100%' }} />;
@@ -330,35 +342,43 @@ const SalesDashboard = () => {
     return (
         <div className="dashboard">
             <header className="header">
-                <h1>Dashboard de Análisis de Ventas</h1>
-                <p className="subtitle">Herramienta para la visualización y análisis de datos de ventas en archivos Excel.</p>
-                <div className="authors-list">
-                    <h2>Fuentes y Referencias</h2>
-                    <ul>
-                        <li><a href="https://eloquentjavascript.net/" target="_blank" rel="noopener noreferrer">**JavaScript Eloquente**</a> por Marijn Haverbeke</li>
-                        <li><a href="https://carlosazaustre.es/" target="_blank" rel="noopener noreferrer">**Aprender React**</a> por Carlos Azaustre</li>
-                        <li><a href="https://kalob.io/" target="_blank" rel="noopener noreferrer">**JavaScript Professional**</a> por Kalob Taulien</li>
-                        <li><a href="https://www.oreilly.com/library/view/react-up/9781492067885/" target="_blank" rel="noopener noreferrer">**React: Up & Running, 2ª Edición**</a> por Stoyan Stefanov</li>
-                    </ul>
+                <div className="header-content">
+                    <h1>Dashboard de Análisis de Ventas</h1>
+                    <p className="subtitle">Herramienta para la visualización y análisis de datos de ventas en archivos Excel.</p>
+                    <p>Debes cargar los datos de ventas de tus datos de Registros de Compras y Ventas (RCV).</p>
                 </div>
             </header>
+            
             <main className="container">
                 {errorMessage && <div className="alert-message">{errorMessage}</div>}
                 {successMessage && <div className="success-message">{successMessage}</div>}
                 
                 <section className="card upload-section">
+                    <div className="section-icon">📊</div>
                     <h2 className="card-title">Carga y Procesamiento de Datos</h2>
                     <p className="card-description">
-                        Seleccione un archivo en formato **.xls** o **.xlsx** y luego haga clic en "Procesar Archivo".
+                        Seleccione un archivo en formato <strong>.xls</strong> o <strong>.xlsx</strong> y luego haga clic en "Procesar Archivo".
                     </p>
-                    <input type="file" accept=".xls,.xlsx" onChange={handleFileChange} className="file-input" />
-                    <button onClick={handleProcessFile} disabled={!file || isLoading} className="button">
-                        {isLoading ? 'Procesando...' : 'Procesar Archivo'}
-                    </button>
+                    <div className="upload-controls">
+                        <label className="file-input-label">
+                            <span className="file-input-button">Seleccionar archivo</span>
+                            <input type="file" accept=".xls,.xlsx" onChange={handleFileChange} className="file-input" />
+                            <span className="file-name">{file ? file.name : 'Ningún archivo seleccionado'}</span>
+                        </label>
+                        <button onClick={handleProcessFile} disabled={!file || isLoading} className="button">
+                            {isLoading ? (
+                                <>
+                                    <span className="spinner"></span>
+                                    Procesando...
+                                </>
+                            ) : 'Procesar Archivo'}
+                        </button>
+                    </div>
                 </section>
                 
                 {isLoading && (
                     <div className="card loading-card">
+                        <div className="spinner large"></div>
                         <p>Cargando datos y generando gráficos...</p>
                     </div>
                 )}
@@ -368,6 +388,7 @@ const SalesDashboard = () => {
                         <div className="two-column-layout">
                             {data.length > 0 && (
                                 <section className="card data-table-card">
+                                    <div className="section-icon">📋</div>
                                     <h2 className="card-title">Vista Previa de los Datos</h2>
                                     <p className="card-description">Se muestran las primeras 10 filas de su archivo para su validación.</p>
                                     <div className="table-container">
@@ -386,26 +407,28 @@ const SalesDashboard = () => {
                             )}
 
                             <section className="card summary-table-card">
+                                <div className="section-icon">📈</div>
                                 <h2 className="card-title">Resumen Estadístico</h2>
                                 <p className="card-description">Métricas clave de sus datos de ventas.</p>
                                 <div className="table-container">
                                     {summary && (
-                                        <table>
+                                        <table className="summary-table">
                                             <tbody>
                                                 {Object.entries(summary).map(([key, value]) => (
                                                     <tr key={key}>
                                                         <th>{key.charAt(0).toUpperCase() + key.slice(1)}</th>
-                                                        <td>{value}</td>
+                                                        <td>{value} Bs</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
                                         </table>
                                     )}
                                 </div>
+                                
                                 <h2 className="card-title mt-30">Facturas Duplicadas</h2>
                                 {duplicatedInvoices && duplicatedInvoices.length > 0 ? (
                                     <div className="table-container">
-                                        <p className="card-description-small">Se detectaron **{duplicatedInvoices.length}** facturas duplicadas. Se muestran a continuación.</p>
+                                        <p className="card-description-small">Se detectaron <strong>{duplicatedInvoices.length}</strong> facturas duplicadas. Se muestran a continuación.</p>
                                         <table>
                                             <thead>
                                                 <tr>{duplicatedInvoices.length > 0 && Object.keys(duplicatedInvoices[0]).map((key, i) => <th key={i}>{key}</th>)}</tr>
@@ -418,28 +441,34 @@ const SalesDashboard = () => {
                                         </table>
                                     </div>
                                 ) : (
-                                    <p>No se detectaron facturas duplicadas.</p>
+                                    <p className="no-duplicates">No se detectaron facturas duplicadas.</p>
                                 )}
                             </section>
                         </div>
+                        
                         <section className="card graph-card">
+                            <div className="section-icon">📉</div>
                             <h2 className="card-title">Análisis Gráfico de Ventas</h2>
                             <p className="card-description">Explore las tendencias de ventas con estas visualizaciones interactivas.</p>
+                            
                             <div className="graph-container">
                                 <h3 className="graph-title">Ventas por Día</h3>
                                 <p className="graph-description">Muestra el comportamiento de las ventas totales día a día, ideal para identificar picos o caídas en la actividad comercial.</p>
                                 <div className="graph">{renderLineGraph()}</div>
                             </div>
+                            
                             <div className="graph-container">
                                 <h3 className="graph-title">Ventas por Mes</h3>
                                 <p className="graph-description">Agrega las ventas totales de cada mes para visualizar la estacionalidad y las tendencias a largo plazo.</p>
                                 <div className="graph">{renderBarGraph()}</div>
                             </div>
+                            
                             <div className="graph-container">
                                 <h3 className="graph-title">Distribución de Ventas por Día de la Semana</h3>
                                 <p className="graph-description">Identifique los días de la semana con mayor o menor actividad de ventas para optimizar recursos y campañas.</p>
                                 <div className="graph">{renderPieChart()}</div>
                             </div>
+                            
                             <div className="graph-container">
                                 <h3 className="graph-title">Regresión Lineal de Ventas</h3>
                                 <p className="graph-description">Visualiza la tendencia general de las ventas. La línea de regresión muestra la dirección del crecimiento o decrecimiento a lo largo del tiempo.</p>
@@ -449,9 +478,41 @@ const SalesDashboard = () => {
                     </>
                 )}
             </main>
+            
             <footer className="footer">
-                <p>Desarrollado por Carlos Dev</p>
-                <p>&copy; 2025 - Dashboard de Análisis de Ventas Desarrollado con React.</p>
+                <div className="footer-content">
+                    <div className="footer-section">
+                        <h3>Dashboard de Análisis de Ventas</h3>
+                        <p>Desarrollado por Carlos Dev</p>
+                        <p>&copy; 2025 - Todos los derechos reservados</p>
+                    </div>
+                    
+                    <div className="footer-section">
+                        <h3>Referencias Bibliográficas</h3>
+                        <ul className="references-list">
+                            <li>
+                                <a href="https://eloquentjavascript.net/" target="_blank" rel="noopener noreferrer">
+                                    <strong>JavaScript Eloquente</strong> por Marijn Haverbeke
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://carlosazaustre.es/" target="_blank" rel="noopener noreferrer">
+                                    <strong>Aprender React</strong> por Carlos Azaustre
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://kalob.io/" target="_blank" rel="noopener noreferrer">
+                                    <strong>JavaScript Professional</strong> por Kalob Taulien
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.oreilly.com/library/view/react-up/9781492067885/" target="_blank" rel="noopener noreferrer">
+                                    <strong>React: Up & Running, 2ª Edición</strong> por Stoyan Stefanov
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </footer>
         </div>
     );
