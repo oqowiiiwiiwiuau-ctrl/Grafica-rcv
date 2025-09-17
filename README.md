@@ -48,7 +48,7 @@ El otro 10 %... bueno, depende del Excel del de finanzas.
 
 ```bash
 # Clona el repo
-git clone https://github.com/tu-usuario/ventas-excel-dashboard.git
+git clone https://github.com/oqowiiiwiiwiuau-ctrl/Grafica-rcv
 
 # Instala dependencias
 npm install
