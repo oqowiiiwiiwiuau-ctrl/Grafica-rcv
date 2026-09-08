@@ -22,7 +22,6 @@ const SalesDashboard = () => {
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
-    // Agregamos DEBITO FISCAL a las columnas requeridas
     const requiredColumns = ['FECHA DE LA FACTURA', 'IMPORTE TOTAL DE LA VENTA', 'Nº DE LA FACTURA', 'DEBITO FISCAL'];
 
     const handleFileChange = (event) => {
@@ -71,12 +70,10 @@ const SalesDashboard = () => {
                 }
 
                 const processedData = jsonData.map(row => {
-                    // Procesar IMPORTE TOTAL DE LA VENTA
                     let importeString = String(row['IMPORTE TOTAL DE LA VENTA']);
                     importeString = importeString.replace(',', '.').replace(/[^\d.]/g, '');
                     const importe = parseFloat(importeString);
 
-                    // Procesar DEBITO FISCAL
                     let debitoFiscalString = String(row['DEBITO FISCAL'] || '0');
                     debitoFiscalString = debitoFiscalString.replace(',', '.').replace(/[^\d.]/g, '');
                     const debitoFiscal = parseFloat(debitoFiscalString) || 0;
@@ -100,6 +97,7 @@ const SalesDashboard = () => {
                     };
                 });
 
+                // Detectar facturas duplicadas
                 const invoiceCounts = processedData.reduce((acc, row) => {
                     const invoiceNumber = row['Nº DE LA FACTURA'];
                     acc[invoiceNumber] = (acc[invoiceNumber] || 0) + 1;
@@ -125,7 +123,6 @@ const SalesDashboard = () => {
                 const mean = sales.reduce((a, b) => a + b, 0) / sales.length;
                 const stdDev = Math.sqrt(sales.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / sales.length);
                 
-                // Contar facturas válidas (con importe > 0)
                 const facturasValidas = processedData.filter(row => row['IMPORTE TOTAL'] > 0).length;
                 
                 setSummary({
@@ -360,55 +357,99 @@ const SalesDashboard = () => {
         return <Plotly data={plotData} layout={layout} style={{ width: '100%' }} />;
     };
 
-    // Componente para mostrar los datos de resumen en un cuadro visible
     const renderDatosGenerales = () => {
         if (!summary) return null;
         
         return (
-            <div className="datos-generales-container">
-                <div className="datos-generales-grid">
-                    <div className="dato-item">
-                        <div className="dato-icon">💰</div>
-                        <div className="dato-info">
-                            <span className="dato-label">Total Ventas</span>
-                            <span className="dato-valor">{summary.totalVentas} Bs</span>
-                        </div>
+            <div className="datos-generales-grid">
+                <div className="dato-item">
+                    <div className="dato-icon">💰</div>
+                    <div className="dato-info">
+                        <span className="dato-label">Total Ventas</span>
+                        <span className="dato-valor">{summary.totalVentas} Bs</span>
                     </div>
-                    <div className="dato-item">
-                        <div className="dato-icon">🏛️</div>
-                        <div className="dato-info">
-                            <span className="dato-label">Débito Fiscal IVA</span>
-                            <span className="dato-valor">{summary.totalDebitoFiscal} Bs</span>
-                        </div>
+                </div>
+                <div className="dato-item">
+                    <div className="dato-icon">🏛️</div>
+                    <div className="dato-info">
+                        <span className="dato-label">Débito Fiscal IVA</span>
+                        <span className="dato-valor">{summary.totalDebitoFiscal} Bs</span>
                     </div>
-                    <div className="dato-item">
-                        <div className="dato-icon">📋</div>
-                        <div className="dato-info">
-                            <span className="dato-label">Total Facturas</span>
-                            <span className="dato-valor">{summary.cantidadFacturas}</span>
-                        </div>
+                </div>
+                <div className="dato-item">
+                    <div className="dato-icon">📋</div>
+                    <div className="dato-info">
+                        <span className="dato-label">Total Facturas</span>
+                        <span className="dato-valor">{summary.cantidadFacturas}</span>
                     </div>
-                    <div className="dato-item">
-                        <div className="dato-icon">✅</div>
-                        <div className="dato-info">
-                            <span className="dato-label">Facturas Válidas</span>
-                            <span className="dato-valor">{summary.facturasValidas}</span>
-                        </div>
+                </div>
+                <div className="dato-item">
+                    <div className="dato-icon">✅</div>
+                    <div className="dato-info">
+                        <span className="dato-label">Facturas Válidas</span>
+                        <span className="dato-valor">{summary.facturasValidas}</span>
                     </div>
-                    <div className="dato-item">
-                        <div className="dato-icon">📈</div>
-                        <div className="dato-info">
-                            <span className="dato-label">Venta Promedio</span>
-                            <span className="dato-valor">{summary.promedio} Bs</span>
-                        </div>
+                </div>
+                <div className="dato-item">
+                    <div className="dato-icon">📈</div>
+                    <div className="dato-info">
+                        <span className="dato-label">Venta Promedio</span>
+                        <span className="dato-valor">{summary.promedio} Bs</span>
                     </div>
-                    <div className="dato-item">
-                        <div className="dato-icon">📊</div>
-                        <div className="dato-info">
-                            <span className="dato-label">Facturas Duplicadas</span>
-                            <span className="dato-valor">{duplicatedInvoices ? duplicatedInvoices.length : 0}</span>
-                        </div>
+                </div>
+                <div className="dato-item dato-duplicado">
+                    <div className="dato-icon">⚠️</div>
+                    <div className="dato-info">
+                        <span className="dato-label">Facturas Duplicadas</span>
+                        <span className="dato-valor" style={{ color: duplicatedInvoices && duplicatedInvoices.length > 0 ? '#e74c3c' : '#27ae60' }}>
+                            {duplicatedInvoices ? duplicatedInvoices.length : 0}
+                        </span>
                     </div>
+                </div>
+            </div>
+        );
+    };
+
+    // Función para renderizar la tabla de facturas duplicadas
+    const renderDuplicatedInvoices = () => {
+        if (!duplicatedInvoices || duplicatedInvoices.length === 0) {
+            return (
+                <div className="no-duplicates-message">
+                    <span className="no-duplicates-icon">✅</span>
+                    <p>No se detectaron facturas duplicadas en el archivo.</p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="duplicates-container">
+                <div className="duplicates-header">
+                    <span className="duplicates-icon">⚠️</span>
+                    <p className="duplicates-count">
+                        Se detectaron <strong>{duplicatedInvoices.length}</strong> facturas duplicadas
+                    </p>
+                </div>
+                <div className="table-container">
+                    <table className="duplicates-table">
+                        <thead>
+                            <tr>
+                                {Object.keys(duplicatedInvoices[0]).map((key, i) => (
+                                    <th key={i}>{key}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {duplicatedInvoices.map((row, i) => (
+                                <tr key={i} className="duplicate-row">
+                                    {Object.values(row).map((val, j) => (
+                                        <td key={j}>
+                                            {val instanceof Date ? val.toLocaleDateString() : val}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         );
@@ -460,7 +501,6 @@ const SalesDashboard = () => {
                 
                 {!isLoading && data && (
                     <>
-                        {/* CUADRO DE DATOS GENERALES - VISIBLE Y DESTACADO */}
                         <section className="card datos-generales-card">
                             <div className="section-icon">📊</div>
                             <h2 className="card-title">Datos Generales de Ventas</h2>
@@ -531,16 +571,27 @@ const SalesDashboard = () => {
                                                     <th>📐 Desviación Estándar</th>
                                                     <td><strong>{summary.desviacion}</strong> Bs</td>
                                                 </tr>
-                                                <tr>
-                                                    <th>🔄 Facturas Duplicadas</th>
-                                                    <td><strong>{duplicatedInvoices ? duplicatedInvoices.length : 0}</strong></td>
-                                                </tr>
                                             </tbody>
                                         </table>
                                     )}
                                 </div>
                             </section>
                         </div>
+
+                        {/* SECCIÓN DE FACTURAS DUPLICADAS - DESTACADA */}
+                        <section className="card duplicates-card">
+                            <div className="section-icon">⚠️</div>
+                            <h2 className="card-title">Facturas Duplicadas</h2>
+                            <p className="card-description">
+                                Lista de facturas que aparecen más de una vez en el archivo. 
+                                {duplicatedInvoices && duplicatedInvoices.length > 0 && (
+                                    <span style={{ color: '#e74c3c', fontWeight: 'bold' }}>
+                                        {' '}Se encontraron {duplicatedInvoices.length} registros duplicados.
+                                    </span>
+                                )}
+                            </p>
+                            {renderDuplicatedInvoices()}
+                        </section>
                         
                         <section className="card graph-card">
                             <div className="section-icon">📉</div>
