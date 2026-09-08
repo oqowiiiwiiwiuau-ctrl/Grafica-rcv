@@ -22,7 +22,8 @@ const SalesDashboard = () => {
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
-    const requiredColumns = ['FECHA DE LA FACTURA', 'IMPORTE TOTAL DE LA VENTA', 'Nº DE LA FACTURA'];
+    // Agregamos DEBITO FISCAL a las columnas requeridas
+    const requiredColumns = ['FECHA DE LA FACTURA', 'IMPORTE TOTAL DE LA VENTA', 'Nº DE LA FACTURA', 'DEBITO FISCAL'];
 
     const handleFileChange = (event) => {
         const selectedFile = event.target.files[0];
@@ -70,9 +71,15 @@ const SalesDashboard = () => {
                 }
 
                 const processedData = jsonData.map(row => {
+                    // Procesar IMPORTE TOTAL DE LA VENTA
                     let importeString = String(row['IMPORTE TOTAL DE LA VENTA']);
                     importeString = importeString.replace(',', '.').replace(/[^\d.]/g, '');
                     const importe = parseFloat(importeString);
+
+                    // Procesar DEBITO FISCAL
+                    let debitoFiscalString = String(row['DEBITO FISCAL'] || '0');
+                    debitoFiscalString = debitoFiscalString.replace(',', '.').replace(/[^\d.]/g, '');
+                    const debitoFiscal = parseFloat(debitoFiscalString) || 0;
 
                     const excelDate = row['FECHA DE LA FACTURA'];
                     let parsedDate = null;
@@ -89,6 +96,7 @@ const SalesDashboard = () => {
                         ...row,
                         'FECHA': parsedDate,
                         'IMPORTE TOTAL': importe,
+                        'DEBITO FISCAL PROCESADO': debitoFiscal,
                     };
                 });
 
@@ -102,6 +110,10 @@ const SalesDashboard = () => {
                 setDuplicatedInvoices(duplicates.length > 0 ? duplicates : null);
                 
                 const sales = processedData.map(d => d['IMPORTE TOTAL']).filter(v => !isNaN(v));
+                const debitoFiscalTotal = processedData
+                    .map(d => d['DEBITO FISCAL PROCESADO'] || 0)
+                    .filter(v => !isNaN(v))
+                    .reduce((a, b) => a + b, 0);
                 
                 if (sales.length === 0) {
                     setErrorMessage('No hay valores numéricos válidos en la columna IMPORTE TOTAL DE LA VENTA para graficar.');
@@ -109,13 +121,18 @@ const SalesDashboard = () => {
                     return;
                 }
 
+                const totalVentas = sales.reduce((a, b) => a + b, 0);
                 const mean = sales.reduce((a, b) => a + b, 0) / sales.length;
                 const stdDev = Math.sqrt(sales.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / sales.length);
+                
                 setSummary({
+                    totalVentas: totalVentas.toFixed(2),
+                    totalDebitoFiscal: debitoFiscalTotal.toFixed(2),
                     promedio: mean.toFixed(2),
                     maximo: Math.max(...sales).toFixed(2),
                     minimo: Math.min(...sales).toFixed(2),
                     desviacion: stdDev.toFixed(2),
+                    cantidadFacturas: processedData.length,
                 });
 
                 setData(processedData);
@@ -339,6 +356,57 @@ const SalesDashboard = () => {
         return <Plotly data={plotData} layout={layout} style={{ width: '100%' }} />;
     };
 
+    const renderSummaryCards = () => {
+        if (!summary) return null;
+        
+        return (
+            <div className="summary-cards">
+                <div className="summary-card-item">
+                    <div className="summary-card-icon">💰</div>
+                    <div className="summary-card-content">
+                        <h4>Total Ventas</h4>
+                        <p className="summary-card-value">{summary.totalVentas} Bs</p>
+                    </div>
+                </div>
+                <div className="summary-card-item">
+                    <div className="summary-card-icon">🏛️</div>
+                    <div className="summary-card-content">
+                        <h4>Total Débito Fiscal IVA</h4>
+                        <p className="summary-card-value">{summary.totalDebitoFiscal} Bs</p>
+                    </div>
+                </div>
+                <div className="summary-card-item">
+                    <div className="summary-card-icon">📊</div>
+                    <div className="summary-card-content">
+                        <h4>Promedio Ventas</h4>
+                        <p className="summary-card-value">{summary.promedio} Bs</p>
+                    </div>
+                </div>
+                <div className="summary-card-item">
+                    <div className="summary-card-icon">📋</div>
+                    <div className="summary-card-content">
+                        <h4>Total Facturas</h4>
+                        <p className="summary-card-value">{summary.cantidadFacturas}</p>
+                    </div>
+                </div>
+                <div className="summary-card-item">
+                    <div className="summary-card-icon">📈</div>
+                    <div className="summary-card-content">
+                        <h4>Venta Máxima</h4>
+                        <p className="summary-card-value">{summary.maximo} Bs</p>
+                    </div>
+                </div>
+                <div className="summary-card-item">
+                    <div className="summary-card-icon">📉</div>
+                    <div className="summary-card-content">
+                        <h4>Venta Mínima</h4>
+                        <p className="summary-card-value">{summary.minimo} Bs</p>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="dashboard">
             <header className="header">
@@ -385,6 +453,14 @@ const SalesDashboard = () => {
                 
                 {!isLoading && data && (
                     <>
+                        {/* Tarjetas de resumen - NUEVO */}
+                        <section className="card summary-cards-section">
+                            <div className="section-icon">📈</div>
+                            <h2 className="card-title">Resumen Financiero</h2>
+                            <p className="card-description">Resumen de ventas totales, débito fiscal IVA y métricas principales.</p>
+                            {renderSummaryCards()}
+                        </section>
+
                         <div className="two-column-layout">
                             {data.length > 0 && (
                                 <section className="card data-table-card">
@@ -414,12 +490,34 @@ const SalesDashboard = () => {
                                     {summary && (
                                         <table className="summary-table">
                                             <tbody>
-                                                {Object.entries(summary).map(([key, value]) => (
-                                                    <tr key={key}>
-                                                        <th>{key.charAt(0).toUpperCase() + key.slice(1)}</th>
-                                                        <td>{value} Bs</td>
-                                                    </tr>
-                                                ))}
+                                                <tr>
+                                                    <th>Total Ventas</th>
+                                                    <td>{summary.totalVentas} Bs</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Total Débito Fiscal IVA</th>
+                                                    <td>{summary.totalDebitoFiscal} Bs</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Promedio</th>
+                                                    <td>{summary.promedio} Bs</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Máximo</th>
+                                                    <td>{summary.maximo} Bs</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Mínimo</th>
+                                                    <td>{summary.minimo} Bs</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Desviación Estándar</th>
+                                                    <td>{summary.desviacion} Bs</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Cantidad de Facturas</th>
+                                                    <td>{summary.cantidadFacturas}</td>
+                                                </tr>
                                             </tbody>
                                         </table>
                                     )}
