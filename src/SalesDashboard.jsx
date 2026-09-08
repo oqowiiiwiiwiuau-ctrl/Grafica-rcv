@@ -125,6 +125,9 @@ const SalesDashboard = () => {
                 const mean = sales.reduce((a, b) => a + b, 0) / sales.length;
                 const stdDev = Math.sqrt(sales.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / sales.length);
                 
+                // Contar facturas válidas (con importe > 0)
+                const facturasValidas = processedData.filter(row => row['IMPORTE TOTAL'] > 0).length;
+                
                 setSummary({
                     totalVentas: totalVentas.toFixed(2),
                     totalDebitoFiscal: debitoFiscalTotal.toFixed(2),
@@ -133,6 +136,7 @@ const SalesDashboard = () => {
                     minimo: Math.min(...sales).toFixed(2),
                     desviacion: stdDev.toFixed(2),
                     cantidadFacturas: processedData.length,
+                    facturasValidas: facturasValidas,
                 });
 
                 setData(processedData);
@@ -356,51 +360,54 @@ const SalesDashboard = () => {
         return <Plotly data={plotData} layout={layout} style={{ width: '100%' }} />;
     };
 
-    const renderSummaryCards = () => {
+    // Componente para mostrar los datos de resumen en un cuadro visible
+    const renderDatosGenerales = () => {
         if (!summary) return null;
         
         return (
-            <div className="summary-cards">
-                <div className="summary-card-item">
-                    <div className="summary-card-icon">💰</div>
-                    <div className="summary-card-content">
-                        <h4>Total Ventas</h4>
-                        <p className="summary-card-value">{summary.totalVentas} Bs</p>
+            <div className="datos-generales-container">
+                <div className="datos-generales-grid">
+                    <div className="dato-item">
+                        <div className="dato-icon">💰</div>
+                        <div className="dato-info">
+                            <span className="dato-label">Total Ventas</span>
+                            <span className="dato-valor">{summary.totalVentas} Bs</span>
+                        </div>
                     </div>
-                </div>
-                <div className="summary-card-item">
-                    <div className="summary-card-icon">🏛️</div>
-                    <div className="summary-card-content">
-                        <h4>Total Débito Fiscal IVA</h4>
-                        <p className="summary-card-value">{summary.totalDebitoFiscal} Bs</p>
+                    <div className="dato-item">
+                        <div className="dato-icon">🏛️</div>
+                        <div className="dato-info">
+                            <span className="dato-label">Débito Fiscal IVA</span>
+                            <span className="dato-valor">{summary.totalDebitoFiscal} Bs</span>
+                        </div>
                     </div>
-                </div>
-                <div className="summary-card-item">
-                    <div className="summary-card-icon">📊</div>
-                    <div className="summary-card-content">
-                        <h4>Promedio Ventas</h4>
-                        <p className="summary-card-value">{summary.promedio} Bs</p>
+                    <div className="dato-item">
+                        <div className="dato-icon">📋</div>
+                        <div className="dato-info">
+                            <span className="dato-label">Total Facturas</span>
+                            <span className="dato-valor">{summary.cantidadFacturas}</span>
+                        </div>
                     </div>
-                </div>
-                <div className="summary-card-item">
-                    <div className="summary-card-icon">📋</div>
-                    <div className="summary-card-content">
-                        <h4>Total Facturas</h4>
-                        <p className="summary-card-value">{summary.cantidadFacturas}</p>
+                    <div className="dato-item">
+                        <div className="dato-icon">✅</div>
+                        <div className="dato-info">
+                            <span className="dato-label">Facturas Válidas</span>
+                            <span className="dato-valor">{summary.facturasValidas}</span>
+                        </div>
                     </div>
-                </div>
-                <div className="summary-card-item">
-                    <div className="summary-card-icon">📈</div>
-                    <div className="summary-card-content">
-                        <h4>Venta Máxima</h4>
-                        <p className="summary-card-value">{summary.maximo} Bs</p>
+                    <div className="dato-item">
+                        <div className="dato-icon">📈</div>
+                        <div className="dato-info">
+                            <span className="dato-label">Venta Promedio</span>
+                            <span className="dato-valor">{summary.promedio} Bs</span>
+                        </div>
                     </div>
-                </div>
-                <div className="summary-card-item">
-                    <div className="summary-card-icon">📉</div>
-                    <div className="summary-card-content">
-                        <h4>Venta Mínima</h4>
-                        <p className="summary-card-value">{summary.minimo} Bs</p>
+                    <div className="dato-item">
+                        <div className="dato-icon">📊</div>
+                        <div className="dato-info">
+                            <span className="dato-label">Facturas Duplicadas</span>
+                            <span className="dato-valor">{duplicatedInvoices ? duplicatedInvoices.length : 0}</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -453,12 +460,14 @@ const SalesDashboard = () => {
                 
                 {!isLoading && data && (
                     <>
-                        {/* Tarjetas de resumen - NUEVO */}
-                        <section className="card summary-cards-section">
-                            <div className="section-icon">📈</div>
-                            <h2 className="card-title">Resumen Financiero</h2>
-                            <p className="card-description">Resumen de ventas totales, débito fiscal IVA y métricas principales.</p>
-                            {renderSummaryCards()}
+                        {/* CUADRO DE DATOS GENERALES - VISIBLE Y DESTACADO */}
+                        <section className="card datos-generales-card">
+                            <div className="section-icon">📊</div>
+                            <h2 className="card-title">Datos Generales de Ventas</h2>
+                            <p className="card-description">
+                                Resumen de las principales métricas de ventas y débito fiscal.
+                            </p>
+                            {renderDatosGenerales()}
                         </section>
 
                         <div className="two-column-layout">
@@ -484,63 +493,52 @@ const SalesDashboard = () => {
 
                             <section className="card summary-table-card">
                                 <div className="section-icon">📈</div>
-                                <h2 className="card-title">Resumen Estadístico</h2>
+                                <h2 className="card-title">Resumen Estadístico Detallado</h2>
                                 <p className="card-description">Métricas clave de sus datos de ventas.</p>
                                 <div className="table-container">
                                     {summary && (
                                         <table className="summary-table">
                                             <tbody>
                                                 <tr>
-                                                    <th>Total Ventas</th>
-                                                    <td>{summary.totalVentas} Bs</td>
+                                                    <th>💰 Total Ventas</th>
+                                                    <td><strong>{summary.totalVentas}</strong> Bs</td>
                                                 </tr>
                                                 <tr>
-                                                    <th>Total Débito Fiscal IVA</th>
-                                                    <td>{summary.totalDebitoFiscal} Bs</td>
+                                                    <th>🏛️ Total Débito Fiscal IVA</th>
+                                                    <td><strong>{summary.totalDebitoFiscal}</strong> Bs</td>
                                                 </tr>
                                                 <tr>
-                                                    <th>Promedio</th>
-                                                    <td>{summary.promedio} Bs</td>
+                                                    <th>📋 Total Facturas</th>
+                                                    <td><strong>{summary.cantidadFacturas}</strong></td>
                                                 </tr>
                                                 <tr>
-                                                    <th>Máximo</th>
-                                                    <td>{summary.maximo} Bs</td>
+                                                    <th>✅ Facturas Válidas</th>
+                                                    <td><strong>{summary.facturasValidas}</strong></td>
                                                 </tr>
                                                 <tr>
-                                                    <th>Mínimo</th>
-                                                    <td>{summary.minimo} Bs</td>
+                                                    <th>📊 Venta Promedio</th>
+                                                    <td><strong>{summary.promedio}</strong> Bs</td>
                                                 </tr>
                                                 <tr>
-                                                    <th>Desviación Estándar</th>
-                                                    <td>{summary.desviacion} Bs</td>
+                                                    <th>📈 Venta Máxima</th>
+                                                    <td><strong>{summary.maximo}</strong> Bs</td>
                                                 </tr>
                                                 <tr>
-                                                    <th>Cantidad de Facturas</th>
-                                                    <td>{summary.cantidadFacturas}</td>
+                                                    <th>📉 Venta Mínima</th>
+                                                    <td><strong>{summary.minimo}</strong> Bs</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>📐 Desviación Estándar</th>
+                                                    <td><strong>{summary.desviacion}</strong> Bs</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>🔄 Facturas Duplicadas</th>
+                                                    <td><strong>{duplicatedInvoices ? duplicatedInvoices.length : 0}</strong></td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     )}
                                 </div>
-                                
-                                <h2 className="card-title mt-30">Facturas Duplicadas</h2>
-                                {duplicatedInvoices && duplicatedInvoices.length > 0 ? (
-                                    <div className="table-container">
-                                        <p className="card-description-small">Se detectaron <strong>{duplicatedInvoices.length}</strong> facturas duplicadas. Se muestran a continuación.</p>
-                                        <table>
-                                            <thead>
-                                                <tr>{duplicatedInvoices.length > 0 && Object.keys(duplicatedInvoices[0]).map((key, i) => <th key={i}>{key}</th>)}</tr>
-                                            </thead>
-                                            <tbody>
-                                                {duplicatedInvoices.map((row, i) => (
-                                                    <tr key={i}>{Object.values(row).map((val, j) => <td key={j}>{val instanceof Date ? val.toLocaleDateString() : val}</td>)}</tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                ) : (
-                                    <p className="no-duplicates">No se detectaron facturas duplicadas.</p>
-                                )}
                             </section>
                         </div>
                         

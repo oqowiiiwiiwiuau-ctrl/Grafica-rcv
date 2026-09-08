@@ -1,79 +1,70 @@
 /* ========================================
-   NUEVOS ESTILOS PARA TARJETAS DE RESUMEN
+   ESTILOS PARA DATOS GENERALES - CUADRO VISIBLE
    ======================================== */
 
-/* Sección de tarjetas de resumen */
-.summary-cards-section {
-    margin-bottom: 0;
+/* Card de datos generales */
+.datos-generales-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 2px solid var(--accent-color);
+    box-shadow: 0 8px 30px rgba(52, 152, 219, 0.15);
 }
 
-/* Contenedor de tarjetas de resumen */
-.summary-cards {
+.datos-generales-card::before {
+    background: linear-gradient(to bottom, var(--accent-color), #2ecc71);
+    width: 6px;
+}
+
+/* Grid de datos generales */
+.datos-generales-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
     margin-top: 1.5rem;
 }
 
-/* Cada tarjeta de resumen */
-.summary-card-item {
-    background: var(--card-background);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 1.2rem 1.5rem;
+/* Cada item de dato */
+.dato-item {
     display: flex;
     align-items: center;
-    gap: 1.2rem;
-    box-shadow: 0 2px 8px var(--shadow-color);
+    gap: 1rem;
+    padding: 1.2rem 1.5rem;
+    background: var(--card-background);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
     transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
+    box-shadow: 0 2px 8px var(--shadow-color);
 }
 
-/* Efecto hover en tarjetas de resumen */
-.summary-card-item:hover {
+.dato-item:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px var(--shadow-color);
+    box-shadow: 0 8px 25px var(--shadow-color);
+    border-color: var(--accent-color);
 }
 
-/* Línea decorativa en cada tarjeta */
-.summary-card-item::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: linear-gradient(to bottom, var(--accent-color), var(--accent-light));
-    border-radius: 0 2px 2px 0;
-}
-
-/* Icono de la tarjeta de resumen */
-.summary-card-icon {
-    font-size: 1.8rem;
-    width: 3.5rem;
-    height: 3.5rem;
+/* Icono del dato */
+.dato-icon {
+    font-size: 2rem;
+    width: 4rem;
+    height: 4rem;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(52, 152, 219, 0.1);
     border-radius: 50%;
     flex-shrink: 0;
-    transition: transform 0.3s ease;
 }
 
-.summary-card-item:hover .summary-card-icon {
-    transform: scale(1.1);
-}
-
-/* Contenido de la tarjeta de resumen */
-.summary-card-content {
+/* Contenedor de información del dato */
+.dato-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
     flex: 1;
     min-width: 0;
 }
 
-.summary-card-content h4 {
-    margin: 0;
+/* Label del dato */
+.dato-label {
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-light);
@@ -81,103 +72,111 @@
     letter-spacing: 0.5px;
 }
 
-.summary-card-value {
-    margin: 0.25rem 0 0 0;
-    font-size: 1.4rem;
+/* Valor del dato */
+.dato-valor {
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--primary-color);
     line-height: 1.2;
 }
 
-/* Colores específicos para cada tipo de tarjeta */
-.summary-card-item:nth-child(1) .summary-card-value {
-    color: #2ecc71;
+/* Colores específicos para cada tipo de dato */
+.dato-item:nth-child(1) .dato-icon {
+    background: rgba(46, 204, 113, 0.15);
 }
-.summary-card-item:nth-child(2) .summary-card-value {
+.dato-item:nth-child(1) .dato-valor {
+    color: #27ae60;
+}
+
+.dato-item:nth-child(2) .dato-icon {
+    background: rgba(230, 126, 34, 0.15);
+}
+.dato-item:nth-child(2) .dato-valor {
     color: #e67e22;
 }
-.summary-card-item:nth-child(3) .summary-card-value {
-    color: var(--accent-color);
+
+.dato-item:nth-child(3) .dato-icon {
+    background: rgba(52, 152, 219, 0.15);
 }
-.summary-card-item:nth-child(4) .summary-card-value {
+.dato-item:nth-child(3) .dato-valor {
+    color: #3498db;
+}
+
+.dato-item:nth-child(4) .dato-icon {
+    background: rgba(155, 89, 182, 0.15);
+}
+.dato-item:nth-child(4) .dato-valor {
     color: #9b59b6;
 }
-.summary-card-item:nth-child(5) .summary-card-value {
-    color: #e74c3c;
+
+.dato-item:nth-child(5) .dato-icon {
+    background: rgba(26, 188, 156, 0.15);
 }
-.summary-card-item:nth-child(6) .summary-card-value {
+.dato-item:nth-child(5) .dato-valor {
     color: #1abc9c;
 }
 
-/* Iconos con colores específicos */
-.summary-card-item:nth-child(1) .summary-card-icon {
-    background: rgba(46, 204, 113, 0.15);
-}
-.summary-card-item:nth-child(2) .summary-card-icon {
-    background: rgba(230, 126, 34, 0.15);
-}
-.summary-card-item:nth-child(3) .summary-card-icon {
-    background: rgba(52, 152, 219, 0.15);
-}
-.summary-card-item:nth-child(4) .summary-card-icon {
-    background: rgba(155, 89, 182, 0.15);
-}
-.summary-card-item:nth-child(5) .summary-card-icon {
+.dato-item:nth-child(6) .dato-icon {
     background: rgba(231, 76, 60, 0.15);
 }
-.summary-card-item:nth-child(6) .summary-card-icon {
-    background: rgba(26, 188, 156, 0.15);
+.dato-item:nth-child(6) .dato-valor {
+    color: #e74c3c;
 }
 
 /* ========================================
-   RESPONSIVE PARA TARJETAS DE RESUMEN
+   RESPONSIVE PARA DATOS GENERALES
    ======================================== */
 
-@media (max-width: 1200px) {
-    .summary-cards {
-        grid-template-columns: repeat(3, 1fr);
+@media (max-width: 1024px) {
+    .datos-generales-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
     }
 }
 
 @media (max-width: 768px) {
-    .summary-cards {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
+    .datos-generales-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.8rem;
     }
     
-    .summary-card-item {
+    .dato-item {
         padding: 1rem;
-        gap: 1rem;
+        gap: 0.8rem;
     }
     
-    .summary-card-icon {
+    .dato-icon {
         font-size: 1.5rem;
         width: 3rem;
         height: 3rem;
     }
     
-    .summary-card-value {
+    .dato-valor {
         font-size: 1.2rem;
+    }
+    
+    .dato-label {
+        font-size: 0.75rem;
     }
 }
 
 @media (max-width: 480px) {
-    .summary-cards {
+    .datos-generales-grid {
         grid-template-columns: 1fr;
-        gap: 0.8rem;
+        gap: 0.7rem;
     }
     
-    .summary-card-item {
+    .dato-item {
         padding: 0.8rem 1rem;
     }
     
-    .summary-card-icon {
+    .dato-icon {
         font-size: 1.3rem;
         width: 2.8rem;
         height: 2.8rem;
     }
     
-    .summary-card-value {
+    .dato-valor {
         font-size: 1.1rem;
     }
 }
